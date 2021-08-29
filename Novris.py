@@ -238,8 +238,12 @@ def check_collision(board, boarder, shape, offset):
 	for cy, row in enumerate(shape):
 		for cx, cell in enumerate(row):
 			try:
-				if (cell and board[ cy + off_y][ cx + off_x]) or (cell and boarder[ cy + off_y + 1][ cx + off_x + 1]):
-					return True
+				if cy + off_y >= 0:
+					if (cell and board[cy + off_y][cx + off_x]) or (cell and boarder[cy + off_y + 3][cx + off_x + 1]):
+						return True
+				else:
+					if (cell and boarder[cy + off_y + 3][cx + off_x + 1]):
+						return True
 			except IndexError:
 				return True
 	return False
@@ -249,7 +253,7 @@ def check_collision_side(board, boarder, shape, offset): # Used to allow the sto
 	for cy, row in enumerate(shape):
 		for cx, cell in enumerate(row):
 			try:
-				if (cell and board[ cy + off_y][ cx + off_x]) or (cell and boarder[ cy + off_y + 1][ cx + off_x + 1]):
+				if (cell and board[ cy + off_y][ cx + off_x]) or (cell and boarder[ cy + off_y + 3][ cx + off_x + 1]):
 					return (cx, cy)
 			except IndexError:
 				return (cx, cy)
@@ -259,16 +263,6 @@ def remove_row(board, row):
 	del board[row]
 	return [[0 for i in range(config['cols'])]] + board
 	
-def join_matrixes(mat1, mat2, mat2_off):
-	off_x, off_y = mat2_off
-	for cy, row in enumerate(mat2):
-		for cx, val in enumerate(row):
-			try:
-				mat1[cy+off_y-1][cx+off_x] += val
-			except:
-				pass
-	return mat1
-
 def remove_color_row(board, y, x):
 	lastx = 0
 	color = board[y][x]
@@ -367,6 +361,7 @@ class NovrisApp(object):
 		self.color_lines_required = 0
 		self.lines_left = 0
 		self.color_lines_left = 0
+		self.start_level = 0
 
 		self.music_list = []
 		number_of_files = len([name for name in listdir(music_folder) if path.isfile(path.join(music_folder, name))])
@@ -377,33 +372,53 @@ class NovrisApp(object):
 		self.current_song = 0
 
 		self.title_surface = pg.Surface((self.width + 82, self.height + 2))
-		self.title_surface.fill(BLACK)
-		self.draw_text(self.title_surface, "Mutant Python Games", 12, GREEN, (self.width + 82) // 2, 110)
-		self.draw_text(self.title_surface, "WASD - Rotate/Flip", 14, WHITE, (self.width + 82) // 2, 170)
-		self.draw_text(self.title_surface, "Move with arrow keys.", 14, WHITE, (self.width + 82) // 2, 185)
-		self.draw_text(self.title_surface, "Or use gamepad", 14, WHITE, (self.width + 82) // 2, 200)
-		self.draw_text(self.title_surface, "Remove rows by:", 18, BLUE, (self.width + 82) // 2, 233)
-		self.draw_text(self.title_surface, "1. Completing them", 14, WHITE, (self.width + 82) // 2, 255)
-		self.draw_text(self.title_surface, "2. Connect 4+ same color", 14, WHITE, (self.width + 82) // 2, 275)
-		self.draw_text(self.title_surface, "Press any key/button to begin.", 16, ORANGE, (self.width + 82) // 2, 320)
-		novris_surface = self.draw_novris_title()
-		nov_rect = novris_surface.get_rect()
-		self.title_surface.blit(novris_surface, ((self.width + 82)//2 - nov_rect.width//2, 50))
-		self.screen.blit(self.title_surface, (0, 0))
-		pg.display.flip()
 
 		pg.joystick.init() # Initializes all joysticks/controllers
 		joysticks = [pg.joystick.Joystick(x) for x in range(pg.joystick.get_count())]
 		loop = True
 		while loop:
+			self.title_surface.fill(BLACK)
+			self.draw_text(self.title_surface, "Mutant Python Games", 12, GREEN, (self.width + 82) // 2, 110)
+			self.draw_text(self.title_surface, "WASD - Rotate/Flip", 14, WHITE, (self.width + 82) // 2, 170)
+			self.draw_text(self.title_surface, "Move with arrow keys.", 14, WHITE, (self.width + 82) // 2, 185)
+			self.draw_text(self.title_surface, "Or use gamepad", 14, WHITE, (self.width + 82) // 2, 200)
+			self.draw_text(self.title_surface, "Remove rows by:", 18, BLUE, (self.width + 82) // 2, 233)
+			self.draw_text(self.title_surface, "1. Completing them", 14, WHITE, (self.width + 82) // 2, 255)
+			self.draw_text(self.title_surface, "2. Connect 4+ same color", 14, WHITE, (self.width + 82) // 2, 275)
+			self.draw_text(self.title_surface, "+/- or R/L to change level", 16, YELLOW, (self.width + 82) // 2, 360)
+			self.draw_text(self.title_surface, "Start Level = " + str(self.start_level), 16, YELLOW, (self.width + 82) // 2, 380)
+			self.draw_text(self.title_surface, "Press any key/button to begin.", 16, ORANGE, (self.width + 82) // 2, 320)
+			novris_surface = self.draw_novris_title()
+			nov_rect = novris_surface.get_rect()
+			self.title_surface.blit(novris_surface, ((self.width + 82) // 2 - nov_rect.width // 2, 50))
+			self.screen.blit(self.title_surface, (0, 0))
+			pg.display.flip()
 			for event in pg.event.get():
 				if event.type == pg.KEYDOWN:
-					loop = False
+					if event.key in [pg.K_PLUS, pg.K_EQUALS, pg.K_MINUS]:
+						if event.key in [pg.K_PLUS, pg.K_EQUALS]:
+							self.start_level += 1
+							if self.start_level > 20:
+								self.start_level = 20
+						elif event.key == pg.K_MINUS:
+							self.start_level -= 1
+							if self.start_level < 0:
+								self.start_level = 0
+					else:
+						loop = False
 				elif event.type == pg.QUIT:
 					self.quit()
 				elif event.type == pg.JOYBUTTONDOWN:
 					if event.button in [0, 1, 2, 3, 6, 7, 8, 9, 10]:
 						loop = False
+					elif event.button == 4:
+						self.start_level -= 1
+						if self.start_level < 0:
+							self.start_level = 0
+					elif event.button == 5:
+						self.start_level += 1
+						if self.start_level > 20:
+							self.start_level = 20
 					elif event.button in [8, 10]:
 						self.quit()
 
@@ -415,14 +430,14 @@ class NovrisApp(object):
 
 	def level_up(self, newgame = 0):
 		global config
+		self.delay = config['delay'] - (self.level * 30)
+		if self.delay < 80:
+			self.delay = 80
 		if not newgame:
 			self.level += 1
 			self.board = new_board()
 			pg.mixer.music.stop()
 			self.channel4.play(self.effects_sounds['levelup'])
-			self.delay -= 30
-			if self.delay < 100:
-				self.delay = 100
 			self.current_song += 1  # Changes song to next in list
 			if self.current_song > len(self.music_list) - 1:
 				self.current_song = 0
@@ -452,10 +467,7 @@ class NovrisApp(object):
 						row[i] = random_color
 			self.stone = selected_shape
 		self.stone_x = int(config['cols'] / 2 - len(self.stone[0])/2)
-		if sum(self.stone[0]): # Makes sure stone appears on first line.
-			self.stone_y = 0
-		else:
-			self.stone_y = -1
+		self.stone_y = -3
 
 		next_selected_shape = copy.deepcopy(choice(choices(novris_shapes, SHAPE_PROB, k=10)))
 		#next_selected_shape = copy.deepcopy(novris_shapes[random.randrange(len(novris_shapes))])
@@ -473,24 +485,36 @@ class NovrisApp(object):
 		self.start_time = self.last_drop = pg.time.get_ticks()
 		self.board = new_board()
 		self.boarder = self.create_boarder()
-		self.level = 0
+		self.level = self.start_level
 		self.score = 0
 		self.next_stone = None
 		self.level_up(1)
 		self.new_stone()
 
+	def join_matrixes(self, mat1, mat2, mat2_off):
+		off_x, off_y = mat2_off
+		for cy, row in enumerate(mat2):
+			for cx, val in enumerate(row):
+				if (cy + off_y - 1 >= 0):
+					try:
+						mat1[cy + off_y - 1][cx + off_x] += val
+					except:
+						pass
+				else:
+					self.gameover = True
+		return mat1
+
 	def create_boarder(self):
 		boarder = [] # creates a matrix of zeros the size of the board surrounded but padded with 1s except for on top to use for collision detection.
-		for j in range(0, len(self.board) + 2):
+		for j in range(0, len(self.board) + 4):
 			new_row = []
 			for i in range(0, len(self.board[0]) + 2):
-				if (j == len(self.board)+1) or (i in [0, len(self.board[0])+1]):
+				if (j == len(self.board)+3) or (i in [0, len(self.board[0])+1]):
 					val = 1
 				else:
 					val = 0
 				new_row.append(val)
 			boarder.append(new_row)
-		print(boarder)
 		return boarder
 	
 	def center_msg(self, msg):
@@ -676,7 +700,7 @@ class NovrisApp(object):
 			self.stone_y += 1
 			if check_collision(self.board, self.boarder, self.stone, (self.stone_x, self.stone_y)) or insta_set:
 				self.channel3.play(self.effects_sounds['set'])
-				self.board = join_matrixes(self.board, self.stone, (self.stone_x, self.stone_y))
+				self.board = self.join_matrixes(self.board, self.stone, (self.stone_x, self.stone_y))
 				self.new_stone()
 				prevy = 0
 				rows_removed = 0
@@ -808,6 +832,7 @@ class NovrisApp(object):
 		self.draw_text(self.screen, str(self.color_lines_left), 14, WHITE, self.width + 40, 195)
 		pg.draw.rect(self.screen, WHITE, (self.width + 7, 130, 68, 90), 1)
 		self.draw_text(self.screen, "Next", 20, WHITE, self.width + 40, 250)
+		self.draw_text(self.screen, "Start Level: " + str(self.start_level), 12, WHITE, self.width + 40, 370)
 		self.screen.blit(self.next_surface, (self.width + 10, 275))
 		pg.display.update()
 	
