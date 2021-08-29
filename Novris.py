@@ -379,9 +379,10 @@ class NovrisApp(object):
 		while loop:
 			self.title_surface.fill(BLACK)
 			self.draw_text(self.title_surface, "Mutant Python Games", 12, GREEN, (self.width + 82) // 2, 110)
-			self.draw_text(self.title_surface, "WASD - Rotate/Flip", 14, WHITE, (self.width + 82) // 2, 170)
-			self.draw_text(self.title_surface, "Move with arrow keys.", 14, WHITE, (self.width + 82) // 2, 185)
-			self.draw_text(self.title_surface, "Or use gamepad", 14, WHITE, (self.width + 82) // 2, 200)
+			self.draw_text(self.title_surface, "WASD - Rotate/Flip", 14, WHITE, (self.width + 82) // 2, 155)
+			self.draw_text(self.title_surface, "Move with arrow keys.", 14, WHITE, (self.width + 82) // 2, 170)
+			self.draw_text(self.title_surface, "Space - Drop, X - place", 14, WHITE, (self.width + 82) // 2, 185)
+			self.draw_text(self.title_surface, "or use gamepad", 14, WHITE, (self.width + 82) // 2, 200)
 			self.draw_text(self.title_surface, "Remove rows by:", 18, BLUE, (self.width + 82) // 2, 233)
 			self.draw_text(self.title_surface, "1. Completing them", 14, WHITE, (self.width + 82) // 2, 255)
 			self.draw_text(self.title_surface, "2. Connect 4+ same color", 14, WHITE, (self.width + 82) // 2, 275)
